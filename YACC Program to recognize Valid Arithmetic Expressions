@@ -1,0 +1,71 @@
+//YACC PROGRAM
+
+%{
+#include <stdio.h>
+#include <stdlib.h>
+
+int yylex();
+void yyerror(const char *s);
+int success = 0; // Will be set only when parsing is successful
+%}
+
+%token NUMBER IDENTIFIER
+
+%left '+' '-'
+%left '*' '/'
+%right UMINUS
+
+%%
+
+input:
+    expr { success = 1; }
+    ;
+
+expr:
+      expr '+' expr
+    | expr '-' expr
+    | expr '*' expr
+    | expr '/' expr
+    | '-' expr %prec UMINUS
+    | '(' expr ')'
+    | NUMBER
+    | IDENTIFIER
+    ;
+
+%%
+
+void yyerror(const char *s) {
+    fprintf(stderr, "Error: %s\n", s);
+}
+
+int main() {
+    printf("Enter an arithmetic expression:\n");
+    if (yyparse() == 0 && success)
+        printf("VALID EXPRESSION!\n");
+    return 0;}
+
+//LEX Program
+
+%{
+#include "y.tab.h"
+%}
+
+%%
+
+[0-9]+                  { yylval = atoi(yytext); return NUMBER; }
+[a-zA-Z_][a-zA-Z0-9_]*  { return IDENTIFIER; }
+[ \t\n]                 ; // Ignore whitespace
+"+"                     return '+';
+"-"                     return '-';
+"*"                     return '*';
+"/"                     return '/';
+"("                     return '(';
+")"                     return ')';
+
+.                       { printf("Invalid character: %s\n", yytext); }
+
+%%
+
+int yywrap() {
+    return 1;
+}
