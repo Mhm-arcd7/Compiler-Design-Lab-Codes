@@ -1,0 +1,100 @@
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+int main() {
+	FILE *fp = fopen("inputlex.txt", "r");
+	if (!fp) {
+    	printf("Cannot open file\n");
+    	return 1;
+	}
+
+	char ch, buffer[100];
+	int i;
+
+
+	while ((ch = fgetc(fp)) != EOF) {
+    	if (isspace(ch)) continue;
+
+    	switch (ch) {
+        	// Operators
+        	case '-': case '+': case '/': case '*':
+        	case '=':
+        	{
+            	char first = ch;
+            	ch = fgetc(fp);
+            	if (ch == '=') {
+                	printf("%c%c = Operator\n", first, ch);
+            	}
+        	else if (ch== '/') {
+                	// Skip single-line comment
+                	while ((ch = fgetc(fp)) != EOF && ch != '\n');
+          	 
+            	}
+            	else {
+                	ungetc(ch, fp);
+                	printf("%c = Operator\n", first);
+            	}
+            	break;
+        	}
+
+
+        	// Punctuators
+        	case ',':
+            	printf("%c = Comma\n", ch);
+            	break;
+        	case ';':
+            	printf("%c = Semicolon\n", ch);
+            	break;
+
+        	// Anything else — check manually
+        	default:
+            	// Check for word (keyword or identifier)
+            	if (isalpha(ch) || ch == '_') {
+                	i = 0;
+                	buffer[i++] = ch;
+                	while ((ch = fgetc(fp)) != EOF && (isalnum(ch) || ch == '_')) {
+                    	buffer[i++] = ch;
+                	}
+                	buffer[i] = '\0';
+                	ungetc(ch, fp);
+
+                	// Check if it's a keyword
+                	if (strcmp(buffer, "int") == 0 || strcmp(buffer, "float") == 0 ||
+                    	strcmp(buffer, "char") == 0 || strcmp(buffer, "default") == 0 ||
+                    	strcmp(buffer, "break") == 0 ) {
+                    	printf("%s = Keyword\n", buffer);
+                	} else {
+                    	printf("%s = Identifier\n", buffer);
+                	}
+            	}
+
+            	// Check for number
+            	else if (isdigit(ch)) {
+                	i = 0;
+                	buffer[i++] = ch;
+                	int isFloat = 0;
+                	while ((ch = fgetc(fp)) != EOF && (isdigit(ch) || ch == '.')) {
+                    	if (ch == '.') isFloat = 1;
+                    	buffer[i++] = ch;
+                	}
+                	buffer[i] = '\0';
+                	ungetc(ch, fp);
+
+                	if (isFloat)
+                    	printf("%s = Float\n", buffer);
+                	else
+                    	printf("%s = Integer\n", buffer);
+            	}
+
+            	// Unknown character
+            	else {
+                	printf("%c = Unknown \n", ch);
+            	}
+            	break;
+    	}
+	}
+
+	fclose(fp);
+	return 0;
+}
